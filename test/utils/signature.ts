@@ -2,14 +2,15 @@ import "@nomiclabs/hardhat-ethers";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BytesLike } from "ethers";
 
-export async function signEach(
-  signers: SignerWithAddress[],
+export async function sign(
+  signer: SignerWithAddress,
   message: string
-): Promise<string[]> {
+): Promise<BytesLike> {
   const hash = ethers.utils.solidityKeccak256(["bytes"], [message]);
 
   const bytes = ethers.utils.arrayify(hash);
 
-  return Promise.all(signers.map(async (signer) => signer.signMessage(bytes)));
+  return signer.signMessage(bytes);
 }
