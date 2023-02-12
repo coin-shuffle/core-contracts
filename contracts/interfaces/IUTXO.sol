@@ -66,6 +66,8 @@ interface IUTXO {
         uint256 limit_
     ) external view returns (UTXO[] memory);
 
+    function getUTXOsLength() external view returns (uint256);
+
     function getUTXOById(uint256 id_) external view returns (UTXO memory);
 
     function getUTXOByIds(uint256[] memory ids_) external view returns (UTXO[] memory);

@@ -102,6 +102,10 @@ contract EthereumUTXO is IUTXO {
         return UTXOs.partByAddress(address_, offset_, limit_);
     }
 
+    function getUTXOsLength() external view override returns (uint256) {
+        return UTXOs.length();
+    }
+
     function getUTXOById(uint256 id_) external view override returns (UTXO memory) {
         require(id_ < UTXOs.length(), "EthereumUTXO: UTXO doesn't exist");
 
