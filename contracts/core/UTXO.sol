@@ -11,6 +11,8 @@ import "../libs/UTXOPaginator.sol";
 
 contract EthereumUTXO is IUTXO {
     using ECDSA for bytes32;
+    using ECDSA for bytes;
+
     using UTXOArray for UTXOArray.Array;
     using Paginator for UTXOArray.Array;
 
@@ -37,7 +39,7 @@ contract EthereumUTXO is IUTXO {
 
         bytes memory data_ = abi.encodePacked(input_.id, to_);
         require(
-            utxo_.owner == keccak256(data_).recover(input_.signature),
+            utxo_.owner == keccak256(data_).toEthSignedMessageHash().recover(input_.signature),
             "EthereumUTXO: invalid signature"
         );
 
@@ -61,6 +63,7 @@ contract EthereumUTXO is IUTXO {
 
         uint256 UTXOsLength_ = UTXOs.length();
 
+        require(inputs_[0].id < UTXOsLength_, "EthereumUTXO: UTXO doesn't exist");
         address token_ = UTXOs._values[inputs_[0].id].token;
 
         for (uint i = 0; i < inputs_.length; i++) {
@@ -72,9 +75,9 @@ contract EthereumUTXO is IUTXO {
             require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
             require(
                 utxo_.owner ==
-                    keccak256(abi.encodePacked(inputs_[i].id, data_)).recover(
-                        inputs_[i].signature
-                    ),
+                    keccak256(abi.encodePacked(inputs_[i].id, data_))
+                        .toEthSignedMessageHash()
+                        .recover(inputs_[i].signature),
                 "EthereumUTXO: invalid signature"
             );
 
