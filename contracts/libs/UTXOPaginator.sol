@@ -35,6 +35,15 @@ library Paginator {
         }
     }
 
+    /**
+     * @dev Returns a list of UTXO objects in the storage array owned by the specified address,
+     * starting from the offset and up to the limit.
+     * @param array The UTXO array.
+     * @param user_ The address of the UTXO owner.
+     * @param offset_ The position in UTXO array from which the list will start.
+     * @param limit_ The maximum number of UTXO in the list.
+     * @return list_ The list of unspent UTXO owned by the specified address.
+     */
     function partByAddress(
         UTXOArray.Array storage array,
         address user_,
