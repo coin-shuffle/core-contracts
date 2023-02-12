@@ -6,98 +6,115 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "../interfaces/IUTXO.sol";
 
-contract UTXOERC20 is IUTXO {
+import "../libs/UTXOArray.sol";
+import "../libs/UTXOPaginator.sol";
+
+contract EthereumUTXO is IUTXO {
     using ECDSA for bytes32;
+    using UTXOArray for UTXOArray.Array;
+    using Paginator for UTXOArray.Array;
 
-    UTXO[] public utxos;
+    uint256 public constant MAX_UTXOS = 10;
 
-    function deposit(address token_, uint256 amount_, Output[] memory outs_) public override {
-        require(outs_.length > 0, "empty output");
-        require(getOutAmount(outs_) == amount_, "invalid amounts");
+    UTXOArray.Array internal UTXOs;
+
+    function deposit(address token_, Output[] calldata outputs_) external override {
+        require(outputs_.length > 0, "EthereumUTXO: empty outputs");
+        require(outputs_.length <= MAX_UTXOS, "EthereumUTXO: too many outputs");
+
+        uint256 amount_ = _getTotalAmount(outputs_);
 
         IERC20(token_).transferFrom(msg.sender, address(this), amount_);
 
-        uint256 _id = utxos.length;
-        for (uint _i = 0; _i < outs_.length; _i++) {
-            UTXO memory _utxo = UTXO(token_, outs_[_i].amount, outs_[_i].owner, false);
-            utxos.push(_utxo);
-
-            emit UTXOCreated(_id++, msg.sender);
-        }
-
-        emit Deposited(token_, msg.sender, amount_);
+        UTXOs.addOutputs(token_, outputs_);
     }
 
-    function getOutAmount(Output[] memory outs_) internal pure returns (uint256 result) {
-        for (uint i = 0; i < outs_.length; i++) {
-            result += outs_[i].amount;
-        }
-    }
+    function withdraw(Input memory input_, address to_) external override {
+        require(input_.id < UTXOs.length(), "EthereumUTXO: UTXO doesn't exist");
 
-    function withdraw(Input memory input_, address to_) public override {
-        require(input_.id < utxos.length, "UTXO id out of bound");
-
-        UTXO memory utxo_ = utxos[input_.id];
-        require(!utxo_.spent, "UTXO has been spent");
+        UTXO memory utxo_ = UTXOs.at(input_.id);
+        require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
 
         bytes memory data_ = abi.encodePacked(input_.id, to_);
-        require(utxo_.owner == keccak256(data_).recover(input_.signature), "invalid signature");
+        require(
+            utxo_.owner == keccak256(data_).recover(input_.signature),
+            "EthereumUTXO: invalid signature"
+        );
 
-        utxos[input_.id].spent = true;
+        UTXOs.remove(input_.id);
+
         IERC20(utxo_.token).transfer(to_, utxo_.amount);
-
-        emit UTXOSpent(input_.id, msg.sender);
-        emit Withdrawn(utxo_.token, to_, utxo_.amount);
     }
 
-    function transfer(Input[] memory inputs_, Output[] memory outputs_) public override {
-        require(outputs_.length != 0, "invalid out: can not be empty");
-        require(inputs_.length != 0, "invalid in: can not be empty");
+    function transfer(Input[] memory inputs_, Output[] memory outputs_) external override {
+        require(outputs_.length != 0, "EthereumUTXO: outputs can not be empty");
+        require(inputs_.length != 0, "EthereumUTXO: inputs can not be empty");
 
         uint256 outAmount_ = 0;
+        uint256 inAmount_ = 0;
+
         bytes memory data_;
-        for (uint _i = 0; _i < outputs_.length; _i++) {
-            outAmount_ += outputs_[_i].amount;
-            data_ = abi.encodePacked(data_, outputs_[_i].amount, outputs_[_i].owner);
+        for (uint i = 0; i < outputs_.length; i++) {
+            outAmount_ += outputs_[i].amount;
+            data_ = abi.encodePacked(data_, outputs_[i].amount, outputs_[i].owner);
         }
 
-        address token_ = utxos[inputs_[0].id].token;
-        uint256 inAmount_ = 0;
+        uint256 UTXOsLength_ = UTXOs.length();
+
+        address token_ = UTXOs._values[inputs_[0].id].token;
+
         for (uint i = 0; i < inputs_.length; i++) {
-            require(inputs_[i].id < utxos.length, "UTXO id out of bound");
+            require(inputs_[i].id < UTXOsLength_, "EthereumUTXO: UTXO doesn't exist");
 
-            UTXO memory utxo_ = utxos[inputs_[i].id];
+            UTXO memory utxo_ = UTXOs._values[inputs_[i].id];
 
-            require(token_ == utxo_.token, "all UTXO should be for the same token");
-            require(!utxo_.spent, "UTXO has been spent");
+            require(token_ == utxo_.token, "EthereumUTXO: UTXO token mismatch");
+            require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
             require(
                 utxo_.owner ==
                     keccak256(abi.encodePacked(inputs_[i].id, data_)).recover(
                         inputs_[i].signature
                     ),
-                "invalid signature"
+                "EthereumUTXO: invalid signature"
             );
 
             inAmount_ += utxo_.amount;
-            utxos[inputs_[i].id].spent = true;
-
-            emit UTXOSpent(inputs_[i].id, msg.sender);
+            UTXOs._values[inputs_[i].id].isSpent = true;
         }
 
-        require(inAmount_ == outAmount_, "invalid amounts");
+        require(inAmount_ == outAmount_, "EthereumUTXO: input and output amount mismatch");
 
-        uint256 id_ = utxos.length;
-        for (uint i = 0; i < outputs_.length; i++) {
-            UTXO memory _newUtxo = UTXO(token_, outputs_[i].amount, outputs_[i].owner, false);
-            utxos.push(_newUtxo);
-
-            emit UTXOCreated(id_++, msg.sender);
-        }
+        UTXOs.addOutputs(token_, outputs_);
     }
 
-    function utxo(uint256 id_) public view override returns (UTXO memory) {
-        require(id_ < utxos.length, "UTXO id out of bound");
+    function listUTXOs(
+        uint256 offset_,
+        uint256 limit_
+    ) external view override returns (UTXO[] memory) {
+        return UTXOs.part(offset_, limit_);
+    }
 
-        return utxos[id_];
+    function listUTXOsByAddress(
+        address address_,
+        uint256 offset_,
+        uint256 limit_
+    ) external view override returns (UTXO[] memory) {
+        return UTXOs.partByAddress(address_, offset_, limit_);
+    }
+
+    function getUTXOById(uint256 id_) external view override returns (UTXO memory) {
+        require(id_ < UTXOs.length(), "EthereumUTXO: UTXO doesn't exist");
+
+        return UTXOs._values[id_];
+    }
+
+    function getUTXOByIds(uint256[] memory ids_) external view override returns (UTXO[] memory) {
+        return UTXOs.getUTXOByIds(ids_);
+    }
+
+    function _getTotalAmount(Output[] calldata outputs_) private pure returns (uint256 result) {
+        for (uint i = 0; i < outputs_.length; i++) {
+            result += outputs_[i].amount;
+        }
     }
 }

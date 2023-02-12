@@ -11,10 +11,11 @@ interface IUTXO {
      * owner of the UTXO and spend flag.
      */
     struct UTXO {
+        uint256 id;
         address token;
         uint256 amount;
         address owner;
-        bool spent;
+        bool isSpent;
     }
 
     /**
@@ -24,14 +25,6 @@ interface IUTXO {
         uint256 amount;
         address owner;
     }
-
-    event UTXOCreated(uint256 indexed id, address indexed creator);
-
-    event UTXOSpent(uint256 indexed id, address indexed spender);
-
-    event Deposited(address indexed token, address indexed from, uint256 amount);
-
-    event Withdrawn(address indexed token, address indexed to, uint256 amount);
 
     /**
      * @dev Input contains information about UTXO to be spent: its identifier and corresponding signature.
@@ -47,10 +40,9 @@ interface IUTXO {
     /**
      * @dev Depositing ERC20 token to the contract. You should approve the transfer on token contract before.
      * @param token_ ERC20 token address to deposit
-     * @param amount_ total amount to deposit
      * @param outs_ array of UTXO information to be created
      */
-    function deposit(address token_, uint256 amount_, Output[] memory outs_) external;
+    function deposit(address token_, Output[] memory outs_) external;
 
     /**
      * @dev Withdraw ERC20 token from the contract balance.
@@ -66,9 +58,15 @@ interface IUTXO {
      */
     function transfer(Input[] memory inputs_, Output[] memory outputs_) external;
 
-    /**
-     * @dev Get UTXO by id
-     * @param id_ UTXO id
-     */
-    function utxo(uint256 id_) external view returns (UTXO memory);
+    function listUTXOs(uint256 offset_, uint256 limit_) external view returns (UTXO[] memory);
+
+    function listUTXOsByAddress(
+        address address_,
+        uint256 offset_,
+        uint256 limit_
+    ) external view returns (UTXO[] memory);
+
+    function getUTXOById(uint256 id_) external view returns (UTXO memory);
+
+    function getUTXOByIds(uint256[] memory ids_) external view returns (UTXO[] memory);
 }
