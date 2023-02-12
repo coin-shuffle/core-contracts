@@ -54,9 +54,10 @@ library Paginator {
 
         list_ = new IUTXO.UTXO[](to_ - offset_);
 
+        uint256 iter_ = 0;
         for (uint256 i = offset_; i < to_; i++) {
             if (array.at(i).owner == user_ && !array.at(i).isSpent) {
-                list_[i - offset_] = array.at(i);
+                list_[iter_++] = array.at(i);
             }
         }
     }
