@@ -35,7 +35,10 @@ library UTXOArray {
     ) internal view returns (IUTXO.UTXO[] memory utxos) {
         utxos = new IUTXO.UTXO[](ids_.length);
 
+        uint256 length_ = array._values.length;
         for (uint256 i = 0; i < ids_.length; i++) {
+            require(ids_[i] < length_, "EthereumUTXO: UTXO doesn't exist");
+
             utxos[i] = array._values[ids_[i]];
         }
     }
