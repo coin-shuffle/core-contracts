@@ -422,13 +422,9 @@ describe("EthereumUTXO", () => {
         10
       );
 
-      expect(user2UTXOs.length).to.be.equal(6);
+      expect(user2UTXOs.length).to.be.equal(2);
       expect(user2UTXOs[0].amount).to.be.equal(wei(321));
       expect(user2UTXOs[1].amount).to.be.equal(wei(123));
-      expect(user2UTXOs[2].amount).to.be.equal(wei(0));
-      expect(user2UTXOs[3].amount).to.be.equal(wei(0));
-      expect(user2UTXOs[4].amount).to.be.equal(wei(0));
-      expect(user2UTXOs[5].amount).to.be.equal(wei(0));
 
       const user1UTXOs = await ethereumUTXO.listUTXOsByAddress(
         user1.address,
@@ -436,6 +432,14 @@ describe("EthereumUTXO", () => {
         100
       );
       expect(user1UTXOs.length).to.be.equal(0);
+
+      const user1UTXOs2 = await ethereumUTXO.listUTXOsByAddress(
+        user1.address,
+        0,
+        100
+      );
+
+      expect(user1UTXOs2.length).to.be.equal(4);
     });
   });
 

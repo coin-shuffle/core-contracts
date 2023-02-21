@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import "./Vector.sol";
 import "./UTXOArray.sol";
 
 /**
  *  @notice Library for UTXO pagination.
  */
 library Paginator {
+    using Vector for Vector.Vector;
     using UTXOArray for UTXOArray.Array;
 
     /**
@@ -49,19 +51,19 @@ library Paginator {
         address user_,
         uint256 offset_,
         uint256 limit_
-    ) internal view returns (IUTXO.UTXO[] memory list_) {
+    ) internal view returns (IUTXO.UTXO[] memory) {
         uint256 to_ = _handleIncomingParametersForPart(array.length(), offset_, limit_);
 
-        list_ = new IUTXO.UTXO[](to_ - offset_);
-
-        // TODO: optimize this returned result
+        Vector.Vector memory vector_ = Vector.init();
 
         uint256 iter_ = 0;
         for (uint256 i = offset_; i < to_; i++) {
             if (array.at(i).owner == user_ && !array.at(i).isSpent) {
-                list_[iter_++] = array.at(i);
+                vector_.push(bytes32(uint256(array.at(i).id)));
             }
         }
+
+        return array.getUTXOByIds(vector_.toUint256Array());
     }
 
     function _handleIncomingParametersForPart(
