@@ -156,7 +156,8 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.withdraw(inputs[2], user1.address)
-      ).to.be.rejectedWith("EthereumUTXO: UTXO doesn't exist");
+      ).to.be.rejectedWith("UtxoNotFound");
+
       await expect(
         ethereumUTXO.withdraw(inputs[0], user2.address)
       ).to.be.rejectedWith("EthereumUTXO: invalid signature");
@@ -304,7 +305,7 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.transfer(inputs, newOutputs)
-      ).to.be.rejectedWith("EthereumUTXO: UTXO doesn't exist");
+      ).to.be.rejectedWith("UtxoNotFound");
 
       await expect(ethereumUTXO.transfer(inputs, [])).to.be.rejectedWith(
         "EthereumUTXO: outputs can not be empty"
@@ -324,7 +325,7 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.transfer(inputs, newOutputs)
-      ).to.be.rejectedWith("EthereumUTXO: UTXO doesn't exist");
+      ).to.be.rejectedWith("UtxoNotFound");
 
       inputs = await buildInputsWithAddress([0, 2], user1, [
         user2.address,
@@ -397,7 +398,7 @@ describe("EthereumUTXO", () => {
       expect(utxo.isSpent).to.be.false;
 
       await expect(ethereumUTXO.getUTXOById(12)).to.be.rejectedWith(
-        "EthereumUTXO: UTXO doesn't exist"
+        "UtxoNotFound"
       );
 
       const utxos = await ethereumUTXO.getUTXOByIds([2, 3]);
@@ -406,7 +407,7 @@ describe("EthereumUTXO", () => {
       expect(utxos[1].amount).to.be.equal(wei(250));
 
       await expect(ethereumUTXO.getUTXOByIds([2, 31])).to.be.rejectedWith(
-        "EthereumUTXO: UTXO doesn't exist"
+        "UtxoNotFound"
       );
     });
 

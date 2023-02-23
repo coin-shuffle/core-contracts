@@ -9,12 +9,16 @@ import "../interfaces/IUTXO.sol";
 import "../libs/UTXOArray.sol";
 import "../libs/UTXOPaginator.sol";
 
+import "hardhat/console.sol";
+
 contract EthereumUTXO is IUTXO {
     using ECDSA for bytes32;
     using ECDSA for bytes;
 
     using UTXOArray for UTXOArray.Array;
     using Paginator for UTXOArray.Array;
+
+    error UtxoNotFound();
 
     uint256 public constant MAX_UTXOS = 10;
 
@@ -32,7 +36,9 @@ contract EthereumUTXO is IUTXO {
     }
 
     function withdraw(Input memory input_, address to_) external override {
-        require(input_.id < UTXOs.length(), "EthereumUTXO: UTXO doesn't exist");
+        if (input_.id >= UTXOs.length()) {
+            revert UtxoNotFound();
+        }
 
         UTXO memory utxo_ = UTXOs.at(input_.id);
         require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
@@ -63,11 +69,15 @@ contract EthereumUTXO is IUTXO {
 
         uint256 UTXOsLength_ = UTXOs.length();
 
-        require(inputs_[0].id < UTXOsLength_, "EthereumUTXO: UTXO doesn't exist");
+        if (inputs_[0].id >= UTXOsLength_) {
+            revert UtxoNotFound();
+        }
         address token_ = UTXOs._values[inputs_[0].id].token;
 
         for (uint i = 0; i < inputs_.length; i++) {
-            require(inputs_[i].id < UTXOsLength_, "EthereumUTXO: UTXO doesn't exist");
+            if (inputs_[i].id >= UTXOsLength_) {
+                revert UtxoNotFound();
+            }
 
             UTXO memory utxo_ = UTXOs._values[inputs_[i].id];
 
@@ -110,7 +120,9 @@ contract EthereumUTXO is IUTXO {
     }
 
     function getUTXOById(uint256 id_) external view override returns (UTXO memory) {
-        require(id_ < UTXOs.length(), "EthereumUTXO: UTXO doesn't exist");
+        if (id_ >= UTXOs.length()) {
+            revert UtxoNotFound();
+        }
 
         return UTXOs._values[id_];
     }
