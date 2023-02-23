@@ -51,6 +51,8 @@ interface IUTXO {
         bytes signature;
     }
 
+    error UtxoNotFound();
+
     /**
      * @dev Deposits an ERC20 token to the contract by creating UTXOs.
      * Before depositing, ensure that the transfer is approved on the token contract.

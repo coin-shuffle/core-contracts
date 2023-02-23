@@ -11,8 +11,6 @@ library UTXOArray {
         IUTXO.UTXO[] _values;
     }
 
-    error UtxoNotFound();
-
     function addOutputs(
         Array storage array,
         address token_,
@@ -40,7 +38,7 @@ library UTXOArray {
         uint256 length_ = array._values.length;
         for (uint256 i = 0; i < ids_.length; i++) {
             if (ids_[i] >= length_) {
-                revert UtxoNotFound();
+                revert IUTXO.UtxoNotFound();
             }
 
             utxos[i] = array._values[ids_[i]];

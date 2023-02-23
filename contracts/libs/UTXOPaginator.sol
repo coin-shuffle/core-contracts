@@ -56,7 +56,6 @@ library Paginator {
 
         Vector.Vector memory vector_ = Vector.init();
 
-        uint256 iter_ = 0;
         for (uint256 i = offset_; i < to_; i++) {
             if (array.at(i).owner == user_ && !array.at(i).isSpent) {
                 vector_.push(bytes32(uint256(array.at(i).id)));

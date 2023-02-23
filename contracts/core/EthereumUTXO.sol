@@ -9,16 +9,12 @@ import "../interfaces/IUTXO.sol";
 import "../libs/UTXOArray.sol";
 import "../libs/UTXOPaginator.sol";
 
-import "hardhat/console.sol";
-
 contract EthereumUTXO is IUTXO {
     using ECDSA for bytes32;
     using ECDSA for bytes;
 
     using UTXOArray for UTXOArray.Array;
     using Paginator for UTXOArray.Array;
-
-    error UtxoNotFound();
 
     uint256 public constant MAX_UTXOS = 10;
 
