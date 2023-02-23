@@ -38,7 +38,7 @@ library UTXOArray {
         uint256 length_ = array._values.length;
         for (uint256 i = 0; i < ids_.length; i++) {
             if (ids_[i] >= length_) {
-                revert IUTXO.UtxoNotFound();
+                revert IUTXO.UTXONotFound();
             }
 
             utxos[i] = array._values[ids_[i]];

@@ -51,7 +51,8 @@ interface IUTXO {
         bytes signature;
     }
 
-    error UtxoNotFound();
+    error UTXONotFound();
+    error InvalidSignature(address owner, uint256 inputId);
 
     /**
      * @dev Deposits an ERC20 token to the contract by creating UTXOs.

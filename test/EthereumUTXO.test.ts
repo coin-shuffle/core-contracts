@@ -156,11 +156,11 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.withdraw(inputs[2], user1.address)
-      ).to.be.rejectedWith("UtxoNotFound");
+      ).to.be.rejectedWith("UTXONotFound");
 
       await expect(
         ethereumUTXO.withdraw(inputs[0], user2.address)
-      ).to.be.rejectedWith("EthereumUTXO: invalid signature");
+      ).to.be.rejectedWith(`InvalidSignature("${user1.address}", ${inputs[0].id})`);
 
       await ethereumUTXO.withdraw(inputs[0], user1.address);
       await expect(
@@ -222,7 +222,7 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.transfer(inputs, newOutputs)
-      ).to.be.rejectedWith("EthereumUTXO: invalid signature");
+      ).to.be.rejectedWith(`InvalidSignature("${user1.address}", ${inputs[0].id})`);
 
       inputsFromUser1 = replaceSignature(inputsFromUser1, user1, signedData);
       inputsFromUser2 = replaceSignature(inputsFromUser2, user2, signedData);
@@ -305,7 +305,7 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.transfer(inputs, newOutputs)
-      ).to.be.rejectedWith("UtxoNotFound");
+      ).to.be.rejectedWith("UTXONotFound");
 
       await expect(ethereumUTXO.transfer(inputs, [])).to.be.rejectedWith(
         "EthereumUTXO: outputs can not be empty"
@@ -325,7 +325,7 @@ describe("EthereumUTXO", () => {
 
       await expect(
         ethereumUTXO.transfer(inputs, newOutputs)
-      ).to.be.rejectedWith("UtxoNotFound");
+      ).to.be.rejectedWith("UTXONotFound");
 
       inputs = await buildInputsWithAddress([0, 2], user1, [
         user2.address,
@@ -398,7 +398,7 @@ describe("EthereumUTXO", () => {
       expect(utxo.isSpent).to.be.false;
 
       await expect(ethereumUTXO.getUTXOById(12)).to.be.rejectedWith(
-        "UtxoNotFound"
+        "UTXONotFound"
       );
 
       const utxos = await ethereumUTXO.getUTXOByIds([2, 3]);
@@ -407,7 +407,7 @@ describe("EthereumUTXO", () => {
       expect(utxos[1].amount).to.be.equal(wei(250));
 
       await expect(ethereumUTXO.getUTXOByIds([2, 31])).to.be.rejectedWith(
-        "UtxoNotFound"
+        "UTXONotFound"
       );
     });
 

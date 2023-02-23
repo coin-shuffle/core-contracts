@@ -33,17 +33,16 @@ contract EthereumUTXO is IUTXO {
 
     function withdraw(Input memory input_, address to_) external override {
         if (input_.id >= UTXOs.length()) {
-            revert UtxoNotFound();
+            revert UTXONotFound();
         }
 
         UTXO memory utxo_ = UTXOs.at(input_.id);
         require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
 
         bytes memory data_ = abi.encodePacked(input_.id, to_);
-        require(
-            utxo_.owner == keccak256(data_).toEthSignedMessageHash().recover(input_.signature),
-            "EthereumUTXO: invalid signature"
-        );
+        if (utxo_.owner != keccak256(data_).toEthSignedMessageHash().recover(input_.signature)) {
+            revert InvalidSignature(utxo_.owner, input_.id);
+        }
 
         UTXOs.remove(input_.id);
 
@@ -66,26 +65,27 @@ contract EthereumUTXO is IUTXO {
         uint256 UTXOsLength_ = UTXOs.length();
 
         if (inputs_[0].id >= UTXOsLength_) {
-            revert UtxoNotFound();
+            revert UTXONotFound();
         }
         address token_ = UTXOs._values[inputs_[0].id].token;
 
         for (uint i = 0; i < inputs_.length; i++) {
             if (inputs_[i].id >= UTXOsLength_) {
-                revert UtxoNotFound();
+                revert UTXONotFound();
             }
 
             UTXO memory utxo_ = UTXOs._values[inputs_[i].id];
 
             require(token_ == utxo_.token, "EthereumUTXO: UTXO token mismatch");
             require(!utxo_.isSpent, "EthereumUTXO: UTXO has been spent");
-            require(
-                utxo_.owner ==
-                    keccak256(abi.encodePacked(inputs_[i].id, data_))
-                        .toEthSignedMessageHash()
-                        .recover(inputs_[i].signature),
-                "EthereumUTXO: invalid signature"
-            );
+            if (
+                utxo_.owner !=
+                keccak256(abi.encodePacked(inputs_[i].id, data_)).toEthSignedMessageHash().recover(
+                    inputs_[i].signature
+                )
+            ) {
+                revert InvalidSignature(utxo_.owner, inputs_[i].id);
+            }
 
             inAmount_ += utxo_.amount;
             UTXOs._values[inputs_[i].id].isSpent = true;
@@ -117,7 +117,7 @@ contract EthereumUTXO is IUTXO {
 
     function getUTXOById(uint256 id_) external view override returns (UTXO memory) {
         if (id_ >= UTXOs.length()) {
-            revert UtxoNotFound();
+            revert UTXONotFound();
         }
 
         return UTXOs._values[id_];
